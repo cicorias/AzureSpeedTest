@@ -2,9 +2,12 @@
 <html lang="en">
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Azure Speed Test - Measure the latenecy to your nearest Microsoft Azure Data Center">
+        <meta name="author" content="Richard Astbury">
         <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
         <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
         <title>Azure Speed Test</title>
+        <link rel="icon" type="image/png" href="/favicon.png" />
         <style>
             .container {
                 width:970px;
@@ -15,12 +18,12 @@
     <body>
         <div class="container" style="background:whitesmoke">
             <div><a href="http://www.two10degrees.com/"><img src="//two10degrees.blob.core.windows.net/two10degrees.png" class="pull-right"/></a></div>
-            <h1 style="color:grey;font-size:50px">Windows Azure Speed Test</h1>
+            <h1 style="color:grey;font-size:50px">Microsoft Azure Speed Test</h1>
         </div>
 
         <div class="container" id="wait" style="margin-top:75px">
             <h2>The speed test is starting...</h2>
-            <p>We are measuring the latency from your web browser to the Blob Storage Service in each of the ten Windows Azure Data Centers...</p>
+            <p>We are measuring the latency from your web browser to the Blob Storage Service in each of the 15 Microsoft Azure Data Centers...</p>
         </div>
 
         <div class="container results" style="margin-top:30px;margin-bottom:50px;display:none">
@@ -42,9 +45,9 @@
                     <p>&nbsp;</p>
                     <p><a href="https://github.com/richorama/AzureSpeedTest">Fork</a> on GitHub.</p>
                     <p>&nbsp;</p>
-                    <p>Created by <a href="https://www.twitter.com/richorama/">@richorama</a> at <a href="https://www.twitter.com/two10degrees/">@two10degrees</a>.</p>
+                    <p>Created by <a href="https://www.twitter.com/richorama/">@richorama</a> at <a href="https://www.twitter.com/two10degrees/">@two10degrees</a>. Thanks to <a href="https://twitter.com/mickba">Mick Badran</a> for the storage accounts in Australia.</p>
                     <p>&nbsp;</p>
-                    <p><small>The latency times are indicative only, and do not represent the maxium performance achievable from Windows Azure. Use this website purely as a tool to gauge which Azure Data Center could be the best for your location.<br/>&copy; Two10degrees 2013</small></p>
+                    <p><small>The latency times are indicative only, and do not represent the maxium performance achievable from Microsoft Azure. Use this website purely as a tool to gauge which Azure Data Center could be the best for your location.<br/>&copy; Two10degrees 2014</small></p>
                 </div>
             </div>
         </div>
@@ -54,7 +57,7 @@
 var ctx = document.getElementById("myChart").getContext("2d");
 
 var startTime = {};
-var history = {};
+var pingHistory = {};
 var label = []
 var locations = {
     "speedtestwe": "West Europe",
@@ -67,20 +70,30 @@ var locations = {
     "speedtesteus": "East US",
     "speedtestjpe": "Japan East",
     "speedtestjpw": "Japan West",
+    "speedtestbs": "Brazil South",
+    "speedtestcus": "Central US",
+    "speedtesteus2": "East US 2",
+    "mickmel": "Australia Southeast",
+    "micksyd": "Australia East",
     "cdn": "Content Delivery Network *"
 };
 
 var colours = {
-    "speedtestwe": "#A200FF",
-    "speedtestsea" : "#E51400",
-    "speedtestea": "#1BA1E2",
-    "speedtestnsus": "#00ABA9",
-    "speedtestne": "#8CBF26",
-    "speedtestscus": "#A05000",
-    "speedtestwus": "#E671B8",
-    "speedtesteus": "#F09609",
-    "speedtestjpe": "#333",
-    "speedtestjpw": "#999",
+    "speedtestwe": "#FF0000",
+    "speedtestsea" : "#FF6600",
+    "speedtestea": "#FFCC00",
+    "speedtestnsus": "#CCFF00",
+    "speedtestne": "#66FF00",
+    "speedtestscus": "#333",
+    "speedtestwus": "#00FF66",
+    "speedtesteus": "#00FFCC",
+    "speedtestjpe": "#00CCFF",
+    "speedtestjpw": "#0066FF",
+    "speedtestbs": "#0000FF",
+    "speedtestcus": "#6600FF",
+    "speedtesteus2": "#CC00FF",    
+    "mickmel": "#FF00CC",
+    "micksyd": "#666",    
     "cdn": "#000000"
 }
 
@@ -132,13 +145,13 @@ function drawChart(){
         datasets : []
     }
 
-    for (var x in history){
+    for (var x in pingHistory){
         data.datasets.push({
             fillColor : "rgba(255,255,255,0)",
             strokeColor : colours[x],
             pointColor : "rgba(220,220,220,1)",
             pointStrokeColor : colours[x],
-            data : history[x]
+            data : pingHistory[x]
         });
     }
 
@@ -148,10 +161,10 @@ function drawChart(){
 
 function drawTables(){
     var avg = [];
-    for (var x in history){
+    for (var x in pingHistory){
         var total = 0;
-        history[x].forEach(function(y){total += y});
-        avg.push({dc: locations[x], colour: colours[x], avg: total / history[x].length});
+        pingHistory[x].forEach(function(y){total += y});
+        avg.push({dc: locations[x], colour: colours[x], avg: total / pingHistory[x].length});
     }
     //console.log(avg);
     var html = "";
@@ -171,20 +184,20 @@ function drawTables(){
 
 function drawTwitterLink(dc, ms, cdnCloser){
     if (cdnCloser){
-        $("#cdn").html('There appears to be a <a href="http://msdn.microsoft.com/en-us/library/windowsazure/ff919703.aspx">CDN Node</a> nearer your location.');
+        $("#cdn").html('There appears to be a <a href="http://azure.microsoft.com/en-gb/services/cdn/">CDN Node</a> nearer your location.');
     }
     $("#dc").html(dc);
 
     dc = dc.replace(/[ ]/g, "%20");
-    $("#twitterbutton").html("<p><a href=\"https://twitter.com/intent/tweet?button_hashtag=AzureSpeedTest&text=My%20nearest%20%23WindowsAzure%20Data%20Center%20is%20" + dc + "%20(" + Math.round(ms) + "ms).%20Find%20out%20yours%20http%3A%2F%2Fazurespeedtest.azurewebsites.net%20#AzureSpeedTest\" class='btn btn-primary btn-large' data-size='large' data-related='two10degrees' data-dnt='true'>Tweet your results</a></p>");
+    $("#twitterbutton").html("<p><a href=\"https://twitter.com/intent/tweet?button_hashtag=AzureSpeedTest&text=My%20nearest%20%23Azure%20Data%20Center%20is%20" + dc + "%20(" + Math.round(ms) + "ms).%20Find%20out%20yours%20http%3A%2F%2Fazurespeedtest.azurewebsites.net%20#AzureSpeedTest\" class='btn btn-primary btn-large' data-size='large' data-related='two10degrees' data-dnt='true'>Tweet your results</a></p>");
 }
 
 function call(data){
-    if (!history[data]) history[data] = [];
-    history[data].push((new Date().getTime() - startTime[data]));
+    if (!pingHistory[data]) pingHistory[data] = [];
+    pingHistory[data].push((new Date().getTime() - startTime[data]));
     startTime[data] = undefined;
-    while (history[data].length  > 20){
-        history[data].shift();
+    while (pingHistory[data].length  > 20){
+        pingHistory[data].shift();
     }
 }
 
@@ -203,6 +216,11 @@ var i = 1;
         <script src="https://speedtesteus.blob.core.windows.net/foo.js"></script>
         <script src="https://speedtestjpe.blob.core.windows.net/foo.js"></script>
         <script src="https://speedtestjpw.blob.core.windows.net/foo.js"></script>
+        <script src="https://speedtestbs.blob.core.windows.net/foo.js"></script>
+        <script src="https://speedtestcus.blob.core.windows.net/foo.js"></script>
+        <script src="https://speedtesteus2.blob.core.windows.net/foo.js"></script>
+        <script src="https://mickmel.blob.core.windows.net/foo.js"></script>
+        <script src="https://micksyd.blob.core.windows.net/foo.js"></script>
         <script src="http://az207485.vo.msecnd.net/foo.js"></script>
 
     </body>
